@@ -1,4 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 
-@Controller('auth')
-export class AuthController {}
+@Controller({
+  path: 'auth',
+  version: '1',
+})
+export class AuthController {
+  @Get()
+  findAll() {
+    return 'Hello auth controller';
+  }
+}
