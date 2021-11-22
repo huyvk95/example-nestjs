@@ -56,6 +56,7 @@ module.exports = {
     'no-console': 'error',
     'no-use-before-define': 'off',
     'func-names': 'off',
+    'max-classes-per-file': 'off',
     'prefer-arrow-callback': 'error',
     'no-useless-constructor': 'off',
     'class-methods-use-this': 'off',
