@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 
 import { UserSignInDto, UserSignUpDto } from './auth.dto';
 import { AuthService } from './auth.service';
@@ -27,8 +27,8 @@ export class AuthController {
   @Post('signup')
   signup(@Body() body: UserSignUpDto) {
     // eslint-disable-next-line
-    console.log(body);
-    return 'This action adds a new user';
+    const user = this.authService.create(body);
+    return user;
   }
 
   @Post('signout')
@@ -36,5 +36,10 @@ export class AuthController {
     // eslint-disable-next-line
     console.log(token);
     return 'This action sign out user';
+  }
+
+  @Get('isExisted')
+  isExisted(@Param('email') email: string) {
+    return this.authService.isExisted(email);
   }
 }

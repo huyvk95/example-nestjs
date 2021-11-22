@@ -61,6 +61,7 @@ module.exports = {
     'no-useless-constructor': 'off',
     'class-methods-use-this': 'off',
     'object-curly-newline': 'off',
+    'import/no-extraneous-dependencies': 'off',
     'arrow-body-style': ['error', 'as-needed'],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

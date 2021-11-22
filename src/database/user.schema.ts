@@ -1,16 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Model } from 'mongoose';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
-// > Static
-interface UserMethod {
-  isExisted: (email: string) => Promise<boolean>;
-  findByEmail: (email: string) => UserDocument;
-}
+// > Type
+export type UserType = {
+  email: string;
+  password: string;
+  name?: string;
+};
 
-// > Class
+// > Schema
 @Schema()
-export class User extends Document implements UserMethod {
+export class User extends Document implements UserType {
   @Prop({
     type: String,
     required: true,
@@ -43,44 +44,32 @@ export class User extends Document implements UserMethod {
     trim: true,
   })
   name: string;
-
-  isExisted: (email: string) => Promise<boolean>;
-
-  findByEmail: (email: string) => UserDocument;
 }
+
+export const UserSchema = SchemaFactory.createForClass(User);
 
 // > Document
 export type UserDocument = User & Document & { _id: any };
 
 // > Model
-export type UserModel = Model<UserDocument> & UserMethod;
-
-// > Schema
-export const UserSchema = SchemaFactory.createForClass(User);
+export type UserModel = Model<UserDocument> & {
+  isExisted: (email: string) => Promise<boolean>;
+  findByEmail: (email: string) => UserDocument;
+};
 
 // > Static
-UserSchema.post('validate', function (document: User, next) {
+UserSchema.post('validate', async function (document: User, next) {
   const doc = document;
   if (this.isModified('password'))
-    doc.password = bcrypt.hashSync(doc.password, 12);
+    doc.password = await bcrypt.hash(doc.password, 12);
   return next();
 });
 
-UserSchema.pre('save', async function (next) {
-  try {
-    if (this.isNew && (await this.isExisted(this.email)))
-      throw new Error('Email already existed');
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-UserSchema.static('isExisted', async function (email) {
+UserSchema.statics.isExisted = async function (email) {
   const users = await this.find({ email });
   return users.length !== 0;
-});
+};
 
-UserSchema.static('findByEmail', function (email) {
-  return this.findOne({ email, active: true });
-});
+UserSchema.statics.findByEmail = function (email) {
+  return this.findOne({ email });
+};
