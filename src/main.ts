@@ -1,4 +1,4 @@
-import { VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -12,6 +12,9 @@ async function bootstrap() {
   app.enableVersioning({
     type: VersioningType.URI,
   });
+
+  // > Validation
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // > Swagger
   const configSwagger = new DocumentBuilder()
