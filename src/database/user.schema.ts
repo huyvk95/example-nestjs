@@ -1,12 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Model } from 'mongoose';
+import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+
+import { AuthException } from '@common/exception';
+import { QueryOneType } from '@common/type';
 
 // > Type
 export type UserType = {
   email: string;
   password: string;
   name?: string;
+  token?: string;
 };
 
 // > Schema
@@ -44,6 +49,12 @@ export class User extends Document implements UserType {
     trim: true,
   })
   name: string;
+
+  @Prop({
+    type: String,
+    select: false,
+  })
+  token?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -54,7 +65,11 @@ export type UserDocument = User & Document & { _id: any };
 // > Model
 export type UserModel = Model<UserDocument> & {
   isExisted: (email: string) => Promise<boolean>;
-  findByEmail: (email: string) => UserDocument;
+  findByEmail: (email: string) => QueryOneType<UserDocument>;
+  checkToken: (token: string) => Promise<UserDocument>;
+  setToken: (document: UserDocument) => Promise<string>;
+  removeToken: (document: UserDocument) => Promise<string>;
+  authentication: (email: string, password: string) => Promise<UserDocument>;
 };
 
 // > Static
@@ -72,4 +87,48 @@ UserSchema.statics.isExisted = async function (email) {
 
 UserSchema.statics.findByEmail = function (email) {
   return this.findOne({ email });
+};
+
+UserSchema.statics.authentication = async function (
+  email: string,
+  password: string,
+) {
+  const user = await this.findOne({ email });
+  if (!user) throw new AuthException();
+
+  const userPassword = (await this.findOne({ email }).select('password'))?.get(
+    'password',
+  );
+  if (!userPassword) throw new AuthException();
+  if (!(await bcrypt.compare(password, userPassword)))
+    throw new AuthException('Password incorrect');
+
+  return user;
+};
+
+UserSchema.statics.checkToken = async function (token: string) {
+  const data: UserType = jwt.verify(token, process.env.SECRET_KEY);
+  if (!data || !data.email) throw new AuthException();
+  const user = await this.findOne({ email: data.email, token });
+  if (!user) throw new AuthException();
+  return user;
+};
+
+UserSchema.statics.setToken = async function (document: UserDocument) {
+  // * Get data
+  const data = document.toObject({ useProjection: true });
+  // * Hash
+  const token = jwt.sign(data, process.env.SECRET_KEY as string, {
+    expiresIn: '1d',
+  });
+  // * Set new token
+  document.set('token', token);
+  await document.save();
+
+  return token;
+};
+
+UserSchema.statics.removeToken = async function (document: UserDocument) {
+  document.set('token', undefined);
+  await document.save();
 };
