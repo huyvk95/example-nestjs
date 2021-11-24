@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { UserSignInDto, UserSignUpDto } from './auth.dto';
 import { AuthService } from './auth.service';
 
+@ApiTags('auth')
 @ApiBearerAuth()
 @Controller({
   path: 'auth',
